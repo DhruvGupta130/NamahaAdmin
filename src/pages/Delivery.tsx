@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,7 +34,7 @@ const deliveries = [
   },
   {
     id: 2,
-    product: "Yellow Chamanthi", 
+    product: "Yellow Chamanthi",
     weight: "50 gm",
     address: "Aakriti Esta - A 705\nTellapur, Hyderabad, Telangana...",
     mapLink: "Click to view map",
@@ -48,7 +47,7 @@ const deliveries = [
   {
     id: 3,
     product: "Yellow Chamanthi",
-    weight: "50 gm", 
+    weight: "50 gm",
     address: "Aakriti Esta - A 705\nTellapur, Hyderabad, Telangana...",
     mapLink: "Click to view map",
     customerName: "Sreedhar Setti",
@@ -61,30 +60,6 @@ const deliveries = [
 
 export default function Delivery() {
   const [loading, setLoading] = useState(false);
-  const [deliveryLocations, setDeliveryLocations] = useState<string[]>([]);
-  const [showAddLocationModal, setShowAddLocationModal] = useState(false);
-
-  useEffect(() => {
-    const fetchDeliveryLocations = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/service/areas"); // Your API endpoint
-        if (res.data && res.data.data) {
-          // Assuming API returns array of service area names
-          const locations = res.data.data.map(
-            (area: any) => `${area.name} up to ${area.radiusKm} km`
-          );
-          setDeliveryLocations(locations);
-        }
-      } catch (err) {
-        console.error("Failed to fetch delivery locations", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDeliveryLocations();
-  }, []);
 
   return (
     <div className="space-y-10">
@@ -105,7 +80,7 @@ export default function Delivery() {
                 15 Sep 2025 Today
               </Button>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-foreground">Filter by Status</label>
               <Select>
@@ -118,7 +93,7 @@ export default function Delivery() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-foreground">Filter by slot</label>
               <Select>
@@ -131,7 +106,7 @@ export default function Delivery() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-foreground">Search by product</label>
               <Input placeholder="Search name" />
@@ -141,6 +116,9 @@ export default function Delivery() {
           {/* Deliveries Table */}
           <Card>
             <CardContent className="p-0">
+                {loading ? (
+                    <div className="p-8 text-center text-muted-foreground">Loading deliveries...</div>
+                ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-secondary/50">
@@ -198,7 +176,7 @@ export default function Delivery() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </div>)}
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/sonner";
+import { Card, CardContent } from "@/components/ui/card";
 
 const revenueMetrics = [
   { title: "Total Revenue", value: "₹0.00", subtitle: "" },
