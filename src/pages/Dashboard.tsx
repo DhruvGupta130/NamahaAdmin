@@ -1,20 +1,55 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import api from "@/lib/api";
+import { toast } from "@/components/ui/sonner";
 
-const revenueMetrics = [
-  { title: "Total Revenue", value: "₹0.00", subtitle: "" },
-  { title: "Earned Platform Fee", value: "₹0.00", subtitle: "" },
-  { title: "Donations Revised", value: "₹0.00", subtitle: "" },
-  { title: "Total Customers", value: "₹0.00", subtitle: "" },
-];
-
-const salesMetrics = [
-  { title: "Total Sales", value: "₹0.00", subtitle: "" },
-  { title: "Total Orders", value: "₹0.00", subtitle: "" },
-  { title: "Number or Subscriptions", value: "₹0.00", subtitle: "" },
-  { title: "Average order value", value: "₹0.00", subtitle: "" },
-];
+interface DashboardStats {
+  totalRevenue: number;
+  subscriptionRevenue: number;
+  totalUsers: number;
+  activeUsers: number;
+  totalSubscriptions: number;
+  activeSubscriptions: number;
+}
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get("/admin/dashboard/stats");
+        setStats(res.data.data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch dashboard stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const revenueMetrics = [
+    { title: "Total Revenue", value: stats ? `₹${stats.totalRevenue}` : "₹0.00" },
+    { title: "Subscription Revenue", value: stats ? `₹${stats.subscriptionRevenue}` : "₹0.00" },
+    { title: "Total Customers", value: stats ? stats.totalUsers : 0 },
+    { title: "Active Customers", value: stats ? stats.activeUsers : 0 },
+  ];
+
+  const salesMetrics = [
+    { title: "Total Subscriptions", value: stats ? stats.totalSubscriptions : 0 },
+    { title: "Active Subscriptions", value: stats ? stats.activeSubscriptions : 0 },
+    { title: "Average Revenue per Subscription", value: stats && stats.totalSubscriptions
+        ? `₹${(stats.totalRevenue / stats.totalSubscriptions).toFixed(2)}`
+        : "₹0.00"
+    },
+    { title: "Unused Metric", value: "-" }, // placeholder, you can add more if needed
+  ];
+
   return (
     <div className="space-y-8">
       {/* Total Revenue Section */}
@@ -26,7 +61,7 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
-                  <p className="text-2xl font-bold text-foreground">{metric.value}</p>
+                  <p className="text-2xl font-bold text-foreground">{loading ? "Loading..." : metric.value}</p>
                 </div>
               </CardContent>
             </Card>
@@ -43,7 +78,7 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
-                  <p className="text-2xl font-bold text-foreground">{metric.value}</p>
+                  <p className="text-2xl font-bold text-foreground">{loading ? "Loading..." : metric.value}</p>
                 </div>
               </CardContent>
             </Card>

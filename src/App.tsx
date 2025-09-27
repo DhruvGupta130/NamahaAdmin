@@ -14,6 +14,7 @@ import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Offers from "./pages/Offers";
+import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -25,15 +26,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="subscriptions" element={<Subscriptions />} />
-            <Route path="products" element={<Products />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="offers" element={<Offers />} />
-            <Route path="delivery" element={<Delivery />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="settings" element={<Settings />} />
+          <Route element={<PrivateRoute />}>
+            <Route path="/" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="subscriptions" element={<Subscriptions />} />
+              <Route path="products" element={<Products />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="offers" element={<Offers />} />
+              <Route path="delivery" element={<Delivery />} />
+              <Route path="customers" element={<Customers />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,48 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
+import { toast } from "@/components/ui/sonner";
 
-const customersData = [
-  {
-    id: 1,
-    name: "Sreedhar Setti",
-    phone: "+91 9640 93 93 91",
-    email: "sreedhar@gmail.com",
-    address: "Aakriti Esta - A 705",
-    fullAddress: "Tellapur, Hyderabad, Telangana...",
-    orders: 23,
-    subscriptionRevenue: "₹899",
-    totalRevenue: "₹8,999"
-  },
-  {
-    id: 2,
-    name: "Sreedhar Setti",
-    phone: "+91 9640 93 93 91",
-    email: "sreedhar@gmail.com",
-    address: "Aakriti Esta - A 705",
-    fullAddress: "Tellapur, Hyderabad, Telangana...",
-    orders: 23,
-    subscriptionRevenue: "₹899",
-    totalRevenue: "₹8,999"
-  },
-  {
-    id: 3,
-    name: "Sreedhar Setti",
-    phone: "+91 9640 93 93 91",
-    email: "sreedhar@gmail.com",
-    address: "Aakriti Esta - A 705",
-    fullAddress: "Tellapur, Hyderabad, Telangana...",
-    orders: 23,
-    subscriptionRevenue: "₹899",
-    totalRevenue: "₹8,999"
-  }
-];
+type Customer = {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  orders: number;
+  subscriptionRevenue: number;
+  totalRevenue: number;
+  active?: boolean;
+};
+
+type PageMeta = {
+  size: number;
+  number: number;
+  totalElements: number;
+  totalPages: number;
+};
 
 export default function Customers() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [customerType, setCustomerType] = useState("all");
+  const [appliedSearch, setAppliedSearch] = useState(""); // only applied on Enter
+  const [page, setPage] = useState<PageMeta>({ size: 10, number: 0, totalElements: 0, totalPages: 0 });
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+
+  // Fetch customers from API
+  const fetchCustomers = async (pageNumber = 0, pageSize = 10, keyword = "") => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/user/customer", { params: { pageNumber, pageSize, keyword } });
+      setCustomers(res.data.data.content || []);
+      setPage(res.data.data.page);
+    } catch (err) {
+      console.error("Failed to fetch customers", err);
+      toast.error("Failed to fetch customers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle active status
+  const toggleUserActive = async (userId: string) => {
+    setTogglingUserId(userId);
+    const updatedUsers = customers.map(user =>
+      user.id === userId ? { ...user, active: !user.active } : user
+    );
+    setCustomers(updatedUsers);
+
+    try {
+      await api.patch(`/admin/user/update/${userId}`);
+      toast.success("User status updated successfully");
+    } catch (err) {
+      console.error("Failed to update user status", err);
+      toast.error("Failed to update user status");
+      setCustomers(customers); // rollback
+    } finally {
+      setTogglingUserId(null);
+    }
+  };
+
+  // Initial load + reload on appliedSearch/page
+  useEffect(() => {
+    fetchCustomers(page.number, page.size, appliedSearch);
+  }, [appliedSearch, page.number, page.size]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setPage(prev => ({ ...prev, number: 0 })); // reset to first page on search
+      setAppliedSearch(searchTerm.trim());
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -52,74 +88,82 @@ export default function Customers() {
 
       <Card>
         <CardContent className="p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-medium mb-4">You can see all Customers</h2>
-            
-            <div className="flex gap-4 mb-6">
-              <div className="w-64">
-                <label className="block text-sm font-medium mb-2">Filter by customer type</label>
-                <Select value={customerType} onValueChange={setCustomerType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Customers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Customers</SelectItem>
-                    <SelectItem value="premium">Premium Customers</SelectItem>
-                    <SelectItem value="regular">Regular Customers</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="w-64">
-                <label className="block text-sm font-medium mb-2">Search by name</label>
-                <Input
-                  placeholder="Search name"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+          <div className="mb-6 flex gap-4">
+            <div className="w-64">
+              <label className="block text-sm font-medium mb-2">Search by name/email/mobile</label>
+              <Input
+                placeholder="Search customers"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                disabled={loading}
+              />
             </div>
           </div>
 
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader className="bg-accent/50">
-                <TableRow>
-                  <TableHead className="font-medium">#</TableHead>
-                  <TableHead className="font-medium">Customers Name</TableHead>
-                  <TableHead className="font-medium">Address</TableHead>
-                  <TableHead className="font-medium">Number of orders</TableHead>
-                  <TableHead className="font-medium">Subscription Revenue</TableHead>
-                  <TableHead className="font-medium">Total Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customersData.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>{customer.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{customer.name}</div>
-                        <div className="text-sm text-muted-foreground">{customer.phone}</div>
-                        <div className="text-sm text-muted-foreground">{customer.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{customer.address}</div>
-                        <div className="text-sm text-muted-foreground">{customer.fullAddress}</div>
-                        <button className="text-primary text-sm hover:underline">
-                          Click to view map
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">{customer.orders}</TableCell>
-                    <TableCell className="text-center">{customer.subscriptionRevenue}</TableCell>
-                    <TableCell className="text-center">{customer.totalRevenue}</TableCell>
+          {loading ? (
+            <div className="text-center py-10">Loading customers...</div>
+          ) : (
+            <div className="rounded-lg border overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-accent/50">
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Mobile</TableHead>
+                    <TableHead>Orders</TableHead>
+                    <TableHead>Subscription Amount</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {customers.map((customer, index) => (
+                    <TableRow key={customer.id}>
+                      <TableCell>{index + 1 + page.number * page.size}</TableCell>
+                      <TableCell>{customer.name}</TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{customer.mobile}</TableCell>
+                      <TableCell>{customer.orders ?? 0}</TableCell>
+                      <TableCell>₹{customer.subscriptionRevenue ?? 0}</TableCell>
+                      <TableCell>₹{customer.totalRevenue ?? 0}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={customer.active ?? true}
+                          onCheckedChange={() => toggleUserActive(customer.id)}
+                          disabled={togglingUserId === customer.id}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {customers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        No customers found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <Button
+              disabled={page.number === 0 || loading}
+              onClick={() => setPage(prev => ({ ...prev, number: prev.number - 1 }))}
+            >
+              Prev
+            </Button>
+            <span>Page {page.number + 1} of {page.totalPages}</span>
+            <Button
+              disabled={page.number + 1 >= page.totalPages || loading}
+              onClick={() => setPage(prev => ({ ...prev, number: prev.number + 1 }))}
+            >
+              Next
+            </Button>
           </div>
         </CardContent>
       </Card>
