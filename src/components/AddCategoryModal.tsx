@@ -59,6 +59,7 @@ export function AddCategoryModal({ open, onOpenChange, onCategoryAdded }: AddCat
                             value={categoryTitle}
                             onChange={(e) => setCategoryTitle(e.target.value.trimStart())}
                             placeholder="Enter category title"
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                             required
                             disabled={loading}
                         />

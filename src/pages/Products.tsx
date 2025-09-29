@@ -16,7 +16,6 @@ interface Product {
   variety: string;
   category: string;
   subscriptionPrice?: number;
-  durationInDays?: number;
   isSubscription?: boolean;
   oneTimePrice?: number;
   isOneTime?: boolean;
@@ -31,7 +30,6 @@ interface ProductForm {
   oneTimePrice: number;
   weightInGrams: number;
   subscriptionPrice: number;
-  durationInDays: number;
   images?: string[];
 }
 
@@ -49,6 +47,7 @@ export default function Products() {
     setLoading(true);
     try {
       const res = await api.get("/admin/product/all", { params: { pageNumber: page, pageSize } });
+      console.log(res.data);
       setTotalPages(res.data?.data?.page.totalPages || 0);
       setProducts(res.data.data.content || []);
     } catch (err: any) {
@@ -92,7 +91,7 @@ export default function Products() {
       }
 
       if (response.data.status === "OK" || response.data.status === "CREATED") {
-        fetchProducts();
+        await fetchProducts();
         setShowAddModal(false);
         setEditProduct(null);
       }
@@ -157,10 +156,8 @@ export default function Products() {
                           <div className="text-sm text-muted-foreground">{product.weightInGrams} gm</div>
                         </div>
                       </td>
-                      <td className="p-4">
-                        {product.isSubscription ? `₹${product.subscriptionPrice} (${product.durationInDays} Days)` : "-"}
-                      </td>
-                      <td className="p-4">{product.isOneTime ? `₹${product.oneTimePrice}` : "-"}</td>
+                      <td className="p-4">{product.isSubscription ? `₹${product.subscriptionPrice}` : "-"}</td>
+                       <td className="p-4">{product.isOneTime ? `₹${product.oneTimePrice}` : "-"}</td>
                       <td className="p-4">{product.category}</td>
                       <td className="p-4">{product.variety}</td>
                       <td className="p-4">
@@ -194,11 +191,13 @@ export default function Products() {
                   ))}
                 </tbody>
                 </table>
-                <div className="flex justify-center gap-2 pt-4 mb-10">
-                  <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-                  <span className="self-center">Page {page + 1} of {totalPages}</span>
-                  <Button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
-                </div>
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-2 pt-4 mb-10">
+                    <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+                    <span className="self-center">Page {page + 1} of {totalPages}</span>
+                    <Button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>

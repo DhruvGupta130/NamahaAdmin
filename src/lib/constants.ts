@@ -4,7 +4,7 @@ export const DiscountType = {
   PERCENTAGE: "PERCENTAGE",
 } as const;
 
-export const OfferType = {
+export const PurchaseType = {
   ONE_TIME: "ONE_TIME",
   SUBSCRIPTION: "SUBSCRIPTION",
 } as const;

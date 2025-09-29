@@ -89,7 +89,7 @@ export default function Customers() {
       <Card>
         <CardContent className="p-6">
           <div className="mb-6 flex gap-4">
-            <div className="w-64">
+            <div className="w-full">
               <label className="block text-sm font-medium mb-2">Search by name/email/mobile</label>
               <Input
                 placeholder="Search customers"
@@ -97,6 +97,7 @@ export default function Customers() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 disabled={loading}
+                className="border border-orange-400 border-2 rounded-md focus:border-none"
               />
             </div>
           </div>
@@ -130,6 +131,7 @@ export default function Customers() {
                       <TableCell>₹{customer.totalRevenue ?? 0}</TableCell>
                       <TableCell>
                         <Switch
+                          className="data-[state=unchecked]:bg-gray-200"
                           checked={customer.active ?? true}
                           onCheckedChange={() => toggleUserActive(customer.id)}
                           disabled={togglingUserId === customer.id}
@@ -150,7 +152,8 @@ export default function Customers() {
           )}
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
+          {page.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-4">
             <Button
               disabled={page.number === 0 || loading}
               onClick={() => setPage(prev => ({ ...prev, number: prev.number - 1 }))}
@@ -165,6 +168,7 @@ export default function Customers() {
               Next
             </Button>
           </div>
+        )}
         </CardContent>
       </Card>
     </div>

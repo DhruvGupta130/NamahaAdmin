@@ -1,21 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { DeliveryLocations } from "./DeliveryLocations";
 import { toast } from "@/components/ui/sonner";
@@ -25,13 +14,10 @@ export default function Delivery() {
   const [loading, setLoading] = useState(false);
   const [pageNumber, setPageNumber] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  // filters
   const [status, setStatus] = useState<string | null>(null);
   const [slot, setSlot] = useState<string>("ALL");
   const [inputKeyword, setInputKeyword] = useState("");
   const [keyword, setKeyword] = useState("");
-
   const pageSize = 10;
 
   const fetchDeliveries = async () => {
@@ -49,33 +35,25 @@ export default function Delivery() {
       setDeliveries(res.data.data.content || []);
       setTotalPages(res.data.data.page.totalPages || 0);
     } catch (err) {
-      console.error("Failed to fetch deliveries:", err);
+      console.error(err);
       toast.error("Failed to fetch deliveries");
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
     fetchDeliveries();
   }, [status, slot, keyword, pageNumber]);
 
-  const handleUpdateStatus = async (id: string | number, status: "DELIVERED" | "CANCELLED") => {
+  const handleUpdateStatus = async (id: string, newStatus: "DELIVERED" | "CANCELLED") => {
     try {
       setLoading(true);
-
-      await api.patch(`/admin/delivery/status/${id}`, null, {
-        params: { status },
-      });
-
-      setDeliveries((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, status } : d))
-      );
-
-      toast.success(`Delivery marked as ${status}`);
+      await api.patch(`/admin/delivery/status/${id}`, null, { params: { status: newStatus } });
+      setDeliveries((prev) => prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d)));
+      toast.success(`Delivery marked as ${newStatus}`);
     } catch (err) {
-      console.error("Failed to update delivery:", err);
+      console.error(err);
       toast.error("Failed to update delivery");
     } finally {
       setLoading(false);
@@ -84,47 +62,45 @@ export default function Delivery() {
 
   const formatAddress = (addr: any) => {
     if (!addr) return "";
-    return [
-      addr.house,
-      addr.street,
-      addr.area,
-      addr.city,
-      addr.state,
-      addr.country,
-      addr.pinCode,
-    ]
+    return [addr.house, addr.street, addr.area, addr.city, addr.state, addr.country, addr.pinCode]
       .filter(Boolean)
       .join(", ");
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-500 text-white";
+      case "DELIVERED":
+        return "bg-green-600 text-white";
+      case "CANCELLED":
+        return "bg-red-600 text-white";
+      default:
+        return "bg-gray-400 text-white";
+    }
+  };
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <Tabs defaultValue="deliveries" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger
-            value="deliveries"
-            className="data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
-          >
+          <TabsTrigger value="deliveries" className="data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
             Deliveries
           </TabsTrigger>
-          <TabsTrigger
-            value="delivery-locations"
-            className="data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
-          >
+          <TabsTrigger value="delivery-locations" className="data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
             Delivery Locations
           </TabsTrigger>
         </TabsList>
 
-        {/* Deliveries tab */}
+        {/* Deliveries Tab */}
         <TabsContent value="deliveries" className="space-y-6">
+
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium text-foreground">
-                Filter by Status
-              </label>
+              <label className="text-sm font-medium text-foreground">Filter by Status</label>
               <Select value={status || "ALL"} onValueChange={setStatus}>
-                <SelectTrigger>
+                <SelectTrigger className="border border-orange-400 rounded-md focus:border-none">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,194 +113,120 @@ export default function Delivery() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground">
-                Filter by slot
-              </label>
+              <label className="text-sm font-medium text-foreground">Filter by Slot</label>
               <Select value={slot} onValueChange={setSlot}>
-                <SelectTrigger>
+                <SelectTrigger className="border border-orange-400 rounded-md focus:border-none">
                   <SelectValue placeholder="All slots" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Slots</SelectItem>
-                  <SelectItem value="MORNING">Morning 5 AM to 8 AM</SelectItem>
-                  <SelectItem value="EVENING">Evening 5 PM to 8 PM</SelectItem>
+                  <SelectItem value="MORNING">Morning 5 AM - 8 AM</SelectItem>
+                  <SelectItem value="EVENING">Evening 5 PM - 8 PM</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground">
-                Search by product or customer
-              </label>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-foreground">Search by Product or Customer</label>
               <Input
-                placeholder="Search name"
+                placeholder="Enter keyword"
                 value={inputKeyword}
                 onChange={(e) => setInputKeyword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setKeyword(inputKeyword); // trigger the API call
-                    setPageNumber(0); // optional: reset to first page
-                  }
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") { setKeyword(inputKeyword); setPageNumber(0); } }}
+                className="border border-orange-400 rounded-md focus:border-none"
               />
             </div>
           </div>
 
-          {/* Deliveries Table */}
-          <Card>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  Loading deliveries...
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-secondary/50">
-                      <tr>
-                        <th className="text-left p-4 font-medium text-foreground">#</th>
-                        <th className="text-left p-4 font-medium text-foreground">Product</th>
-                        <th className="text-left p-4 font-medium text-foreground">Delivery Address</th>
-                        <th className="text-left p-4 font-medium text-foreground">Customer name</th>
-                        <th className="text-left p-4 font-medium text-foreground">Delivery Slot</th>
-                        <th className="text-left p-4 font-medium text-foreground">Status</th>
-                        <th className="text-left p-4 font-medium text-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {!deliveries || deliveries.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                            No deliveries found
-                          </td>
-                        </tr>
-                      ) : (
-                        deliveries.map((delivery) => (
-                          <tr key={delivery.id} className="border-t border-border">
-                            <td className="p-4">{delivery.id}</td>
+          {/* Delivery Cards */}
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading deliveries...</div>
+          ) : deliveries.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground bg-secondary/20 rounded-lg">No deliveries found</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {deliveries.map((delivery) => (
+                <Card key={delivery.id} className="shadow-md hover:shadow-lg transition border border-gray-200">
+                  <CardContent className="space-y-4 p-5">
 
-                            {/* Product */}
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                                  {delivery.product.images?.[0] && (
-                                    <img
-                                      src={delivery.product.images[0]}
-                                      alt={delivery.product.title}
-                                      className="max-w-full max-h-full object-contain"
-                                    />
-                                  )}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span>{delivery.product.title}</span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {delivery.product.weightInGrams}gm
-                                  </span>
-                                  <span className="text-sm text-muted-foreground">₹{delivery.finalPrice}</span>
-                                </div>
-                              </div>
-                            </td>
+                    {/* Header: Customer & Status */}
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-lg">{delivery.customerName}</div>
+                        <div className="text-sm text-muted-foreground">{delivery.customerMobile}</div>
+                      </div>
+                      <Badge className={getStatusBadgeColor(delivery.status)}>
+                        {delivery.status}
+                      </Badge>
+                    </div>
 
-                            {/* Address */}
-                            <td className="p-4">
-                              <div className="space-y-1">
-                                <div className="text-sm text-foreground whitespace-pre-line">
-                                  {formatAddress(delivery.address)}
-                                </div>
-                                {delivery.mapLink && (
-                                  <div className="text-sm text-blue-600 hover:underline cursor-pointer">
-                                    {delivery.mapLink}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
+                    {/* Products */}
+                    <div className="space-y-2">
+                      {delivery.items.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 border-b border-gray-200 pb-2">
+                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
+                            {item.product.images?.[0] && <img src={item.product.images[0]} alt={item.product.title} className="w-full h-full object-contain rounded" />}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{item.product.title}</span>
+                            <span className="text-sm text-muted-foreground">{item.quantity} × ₹{item.unitPrice}</span>
+                            <span className="text-sm font-semibold">₹{item.totalPrice}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
-                            {/* Customer */}
-                            <td className="p-4">
-                              <div className="space-y-1">
-                                <div className="font-medium text-foreground">
-                                  {delivery.customerName}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {delivery.phone}
-                                </div>
-                              </div>
-                            </td>
+                    {/* Address & Slot */}
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div><span className="font-medium text-foreground">Address:</span> {formatAddress(delivery.address)}</div>
+                      {delivery.address?.directions && <div className="italic text-xs">Directions: {delivery.address.directions}</div>}
+                      <div><span className="font-medium text-foreground">Slot:</span> {delivery.scheduledAt?.name} ({delivery.scheduledAt?.startTime} - {delivery.scheduledAt?.endTime})</div>
+                    </div>
 
-                            {/* Slot */}
-                            <td className="p-4">
-                              <div className="text-sm">
-                                {delivery.scheduledAt?.name} ({delivery.scheduledAt?.startTime} - {delivery.scheduledAt?.endTime})
-                              </div>
-                            </td>
+                    {/* Actions */}
+                    <div className="flex gap-2 justify-end mt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={delivery.status === "DELIVERED" || delivery.status === "CANCELLED"}
+                        onClick={() => handleUpdateStatus(delivery.id, "DELIVERED")}
+                        className="text-green-600 border-green-600"
+                      >
+                        {delivery.status === "DELIVERED" ? "Delivered" : "Mark as Delivered"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={delivery.status === "CANCELLED" || delivery.status === "DELIVERED"}
+                        onClick={() => handleUpdateStatus(delivery.id, "CANCELLED")}
+                        className="text-red-600 border-red-600"
+                      >
+                        {delivery.status === "CANCELLED" ? "Cancelled" : "Cancel"}
+                      </Button>
+                    </div>
 
-                            {/* Status */}
-                            <td className="p-4">
-                              <Badge
-                                className={
-                                  delivery.status === "Delivery Pending"
-                                    ? "bg-destructive text-destructive-foreground"
-                                    : "bg-success text-success-foreground"
-                                }
-                              >
-                                {delivery.status}
-                              </Badge>
-                            </td>
-
-                            {/* Actions */}
-                            <td className="p-4 flex gap-2 items-center justify-center">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-primary border-primary"
-                                disabled={delivery.status === "DELIVERED"}
-                                onClick={() => handleUpdateStatus(delivery.id, "DELIVERED")}
-                              >
-                                Deliver
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive border-destructive"
-                                disabled={delivery.status === "CANCELLED"}
-                                onClick={() => handleUpdateStatus(delivery.id, "CANCELLED")}
-                              >
-                                Cancel
-                              </Button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
-          <div className="flex justify-between mt-4">
-            <Button
-              onClick={() => setPageNumber((prev) => Math.max(prev - 1, 0))}
-              disabled={pageNumber === 0 || loading}
-            >
-              Previous
-            </Button>
-            <span className="self-center">
-              Page {pageNumber + 1} of {totalPages}
-            </span>
-            <Button
-              onClick={() => setPageNumber((prev) => Math.min(prev + 1, totalPages - 1))}
-              disabled={pageNumber + 1 >= totalPages || loading}
-            >
-              Next
-            </Button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <Button onClick={() => setPageNumber((p) => Math.max(p - 1, 0))} disabled={pageNumber === 0 || loading}>
+                Previous
+              </Button>
+              <span className="self-center">Page {pageNumber + 1} of {totalPages}</span>
+              <Button onClick={() => setPageNumber((p) => Math.min(p + 1, totalPages - 1))} disabled={pageNumber + 1 >= totalPages || loading}>
+                Next
+              </Button>
+            </div>
+          )}
+
         </TabsContent>
 
-        {/* Delivery Locations tab */}
-        <TabsContent value="delivery-locations" className="space-y-6">
+        <TabsContent value="delivery-locations">
           <DeliveryLocations />
         </TabsContent>
       </Tabs>

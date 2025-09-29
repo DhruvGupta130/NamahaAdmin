@@ -36,7 +36,7 @@ export default function Categories() {
 
   const addCategory = async (name: string) => {
     try {
-      const res = await api.post("/product/category", null, { params: { category: name } });
+      const res = await api.post("/admin/product/category", null, { params: { category: name } });
       if (res.data.status === "CREATED") {
         setCategories(prev => [...prev, name]);
         toast.success(res.data.message || "Category added!");
@@ -48,7 +48,7 @@ export default function Categories() {
 
   const addVariety = async (name: string) => {
     try {
-      const res = await api.post("/product/variety", null, { params: { variety: name } });
+      const res = await api.post("/admin/product/variety", null, { params: { variety: name } });
       if (res.data.status === "CREATED") {
         setVarieties(prev => [...prev, name]);
         toast.success(res.data?.message || "Variety added!");

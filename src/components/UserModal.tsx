@@ -69,23 +69,23 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
           <Input
             placeholder="Name"
             value={form.name}
+            className="border border-orange-400 border-2 rounded-md focus:border-none"
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <Input
             placeholder="Email"
             type="email"
             value={form.email}
+            className="border border-orange-400 border-2 rounded-md focus:border-none"
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <div className="flex">
-            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground select-none">
-              +91
-            </span>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">+91</span>
             <Input
               placeholder="Mobile"
               value={form.mobile}
               onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/, "") })}
-              className="rounded-l-none"
+              className="border border-orange-400 border-2 rounded-md focus:border-none pl-12" // add padding to prevent overlap with +91
               maxLength={10}
             />
           </div>
@@ -93,7 +93,7 @@ export function UserModal({ open, onOpenChange, user, onSuccess }: UserModalProp
             value={form.role}
             onValueChange={(val) => setForm({ ...form, role: val })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
               <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent>

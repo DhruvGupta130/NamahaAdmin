@@ -58,6 +58,7 @@ export function AddUserModal({ open, onOpenChange }: AddUserModalProps) {
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter name"
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
               required
             />
           </div>
@@ -70,6 +71,7 @@ export function AddUserModal({ open, onOpenChange }: AddUserModalProps) {
                 value={formData.username}
                 onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                 placeholder="Enter username"
+                className="border border-orange-400 border-2 rounded-md focus:border-none"
                 required
               />
             </div>
@@ -82,6 +84,7 @@ export function AddUserModal({ open, onOpenChange }: AddUserModalProps) {
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 placeholder="Enter password"
+                className="border border-orange-400 border-2 rounded-md focus:border-none"
                 required
               />
             </div>

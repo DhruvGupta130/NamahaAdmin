@@ -49,7 +49,7 @@ export default function Settings() {
     try {
       setLoading(true);
       const res = await api.get("/admin/user/get", { params: { pageNumber, pageSize } });
-      setUsers(res.data.data.content);
+      setUsers(res.data.data.content || []);
       setPage(res.data.data.page);
     } catch (err) {
       console.error("Error fetching users", err);
@@ -145,16 +145,25 @@ export default function Settings() {
                         </TableRow>
                       ))}
                     </TableBody>
+                    {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        No users found.
+                      </TableCell>
+                    </TableRow>
+                  )}
                   </Table>
                 )}
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <Button disabled={page.number === 0 || loading} onClick={() => fetchUsers(page.number - 1, page.size)}>Prev</Button>
-                <span>Page {page.number + 1} of {page.totalPages}</span>
-                <Button disabled={page.number + 1 >= page.totalPages || loading} onClick={() => fetchUsers(page.number + 1, page.size)}>Next</Button>
-              </div>
+              {page.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-4">
+                  <Button disabled={page.number === 0 || loading} onClick={() => fetchUsers(page.number - 1, page.size)}>Prev</Button>
+                  <span>Page {page.number + 1} of {page.totalPages}</span>
+                  <Button disabled={page.number + 1 >= page.totalPages || loading} onClick={() => fetchUsers(page.number + 1, page.size)}>Next</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

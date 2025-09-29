@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api";
 import CreateOfferModal from "@/components/CreateOfferModal";
+import { DiscountType, PurchaseType } from "@/lib/constants";
 
 type Offer = {
   id: string;
@@ -14,8 +15,8 @@ type Offer = {
   couponCode: string;
   minOrderAmount: number;
   discount: number;
-  discountType: "FIXED" | "PERCENTAGE";
-  offerType: "ONE_TIME" | "SUBSCRIPTION";
+  discountType: keyof typeof DiscountType | "";
+  purchaseType: keyof typeof PurchaseType | "";
   validFrom: string;
   validUntil: string;
   active: boolean;
@@ -80,7 +81,7 @@ export default function Offers() {
       </div>
 
       <div className="mb-4 flex gap-4">
-        <div className="w-64">
+        <div className="w-full">
           <Input
             placeholder="Search offers by title or coupon code"
             value={keyword}
@@ -92,6 +93,7 @@ export default function Offers() {
               }
             }}
             disabled={loading}
+            className="border border-orange-400 border-2 rounded-md focus:border-none"
           />
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function Offers() {
                       <TableCell>
                         {offer.discount} {offer.discountType === "PERCENTAGE" ? "%" : "₹"}
                       </TableCell>
-                      <TableCell>{offer.offerType}</TableCell>
+                      <TableCell>{offer.purchaseType}</TableCell>
                       <TableCell>{new Date(offer.validFrom).toLocaleDateString()}</TableCell>
                       <TableCell>{new Date(offer.validUntil).toLocaleDateString()}</TableCell>
                       <TableCell>

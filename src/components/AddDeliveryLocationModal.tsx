@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import api from "@/lib/api";
 import { toast } from "@/components/ui/sonner";
+import { AxiosResponse } from "axios";
 
 interface Props {
     open: boolean;
@@ -28,7 +29,7 @@ export function AddDeliveryLocationModal({
     const [name, setName] = useState("");
     const [city, setCity] = useState("");
     const [state, setState] = useState("");
-    const [pincode, setPincode] = useState("");
+    const [pinCode, setPinCode] = useState("");
     const [latitude, setLatitude] = useState("");
     const [longitude, setLongitude] = useState("");
     const [radiusKm, setRadiusKm] = useState("");
@@ -41,7 +42,7 @@ export function AddDeliveryLocationModal({
             setName(location.name);
             setCity(location.city);
             setState(location.state);
-            setPincode(location.pincode);
+            setPinCode(location.pinCode);
             setLatitude(location.latitude.toString());
             setLongitude(location.longitude.toString());
             setRadiusKm(location.radiusKm.toString());
@@ -51,7 +52,7 @@ export function AddDeliveryLocationModal({
             setName("");
             setCity("");
             setState("");
-            setPincode("");
+            setPinCode("");
             setLatitude("");
             setLongitude("");
             setRadiusKm("");
@@ -67,7 +68,7 @@ export function AddDeliveryLocationModal({
                 name,
                 city,
                 state,
-                pincode,
+                pinCode,
                 latitude: parseFloat(latitude),
                 longitude: parseFloat(longitude),
                 radiusKm: parseFloat(radiusKm),
@@ -75,7 +76,7 @@ export function AddDeliveryLocationModal({
                 active,
             };
 
-            let res;
+            let res: AxiosResponse<any, any, {}>;
             if (location) {
                 res = await api.put(`/admin/service/areas/${location.id}`, payload);
             } else {
@@ -83,6 +84,17 @@ export function AddDeliveryLocationModal({
             }
 
             onLocationSaved(res.data.data || payload);
+
+            setName("");
+            setCity("");
+            setState("");
+            setPinCode("");
+            setLatitude("");
+            setLongitude("");
+            setRadiusKm("");
+            setDeliveryCharge("");
+            setActive(true);
+            
             toast.success(`Location ${location ? "updated" : "added"} successfully`);
         } catch (err: any) {
             toast.error(err.response?.data?.message || "Failed to save location");
@@ -104,24 +116,25 @@ export function AddDeliveryLocationModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                     <div className="space-y-2">
                         <Label>Name</Label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} />
+                        <Input value={name} onChange={(e) => setName(e.target.value)} className="border border-orange-400 border-2 rounded-md focus:border-none"/>
                     </div>
 
                     <div className="space-y-2">
                         <Label>City</Label>
-                        <Input value={city} onChange={(e) => setCity(e.target.value)} />
+                        <Input value={city} onChange={(e) => setCity(e.target.value)} className="border border-orange-400 border-2 rounded-md focus:border-none"/>
                     </div>
 
                     <div className="space-y-2">
                         <Label>State</Label>
-                        <Input value={state} onChange={(e) => setState(e.target.value)} />
+                        <Input value={state} onChange={(e) => setState(e.target.value)} className="border border-orange-400 border-2 rounded-md focus:border-none"/>
                     </div>
 
                     <div className="space-y-2">
                         <Label>Pincode</Label>
                         <Input
-                            value={pincode}
-                            onChange={(e) => setPincode(e.target.value)}
+                            value={pinCode}
+                            onChange={(e) => setPinCode(e.target.value)}
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                         />
                     </div>
 
@@ -131,6 +144,7 @@ export function AddDeliveryLocationModal({
                             type="number"
                             value={latitude}
                             onChange={(e) => setLatitude(e.target.value)}
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                         />
                     </div>
 
@@ -140,6 +154,7 @@ export function AddDeliveryLocationModal({
                             type="number"
                             value={longitude}
                             onChange={(e) => setLongitude(e.target.value)}
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                         />
                     </div>
 
@@ -149,6 +164,7 @@ export function AddDeliveryLocationModal({
                             type="number"
                             value={radiusKm}
                             onChange={(e) => setRadiusKm(e.target.value)}
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                         />
                     </div>
 
@@ -158,6 +174,7 @@ export function AddDeliveryLocationModal({
                             type="number"
                             value={deliveryCharge}
                             onChange={(e) => setDeliveryCharge(e.target.value)}
+                            className="border border-orange-400 border-2 rounded-md focus:border-none"
                         />
                     </div>
                 </div>
@@ -166,7 +183,7 @@ export function AddDeliveryLocationModal({
                 <div className="flex items-center justify-between border-t pt-4">
                     <div className="flex items-center gap-3">
                         <Label htmlFor="active">Active</Label>
-                        <Switch id="active" checked={active} onCheckedChange={setActive} />
+                        <Switch id="active" checked={active} onCheckedChange={setActive} className="data-[state=unchecked]:bg-gray-300"/>
                     </div>
                     <Button onClick={handleSave} disabled={loading}>
                         {loading ? "Saving..." : "Save"}

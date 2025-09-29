@@ -2,62 +2,92 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api";
-import { DiscountType, OfferType } from "@/lib/constants";
+import { DiscountType, PurchaseType } from "@/lib/constants";
 import dayjs from "dayjs";
 
-export default function CreateOfferModal({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess?: () => void }) {
+type OfferForm = {
+  title: string;
+  description: string;
+  couponCode: string;
+  minOrderAmount: string;
+  discount: string;
+  discountType: keyof typeof DiscountType | "";
+  purchaseType: keyof typeof PurchaseType | "";
+  validFrom: string;
+  validUntil: string;
+};
+
+const initialForm: OfferForm = {
+  title: "",
+  description: "",
+  couponCode: "",
+  minOrderAmount: "",
+  discount: "",
+  discountType: "",
+  purchaseType: "",
+  validFrom: "",
+  validUntil: "",
+};
+
+export default function CreateOfferModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}) {
+  const [form, setForm] = useState<OfferForm>(initialForm);
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [couponCode, setCouponCode] = useState("");
-  const [minOrderAmount, setMinOrderAmount] = useState("");
-  const [discount, setDiscount] = useState("");
-  const [discountType, setDiscountType] = useState<keyof typeof DiscountType | null>(null);
-  const [offerType, setOfferType] = useState<keyof typeof OfferType | null>(null);
-  const [validFrom, setValidFrom] = useState("");
-  const [validUntil, setValidUntil] = useState("");
+
+  const updateField = (field: keyof OfferForm, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
-    if (!title || !couponCode || !minOrderAmount || !discount || !discountType || !offerType || !validFrom || !validUntil) {
+    // Basic validation
+    if (
+      !form.title ||
+      !form.couponCode ||
+      !form.minOrderAmount ||
+      !form.discount ||
+      !form.discountType ||
+      !form.purchaseType ||
+      !form.validFrom ||
+      !form.validUntil
+    ) {
       toast.error("Please fill all required fields");
       return;
     }
 
+    if (dayjs(form.validUntil).isBefore(dayjs(form.validFrom))) {
+      toast.error("Valid Until must be after Valid From");
+      return;
+    }
+
     const payload = {
-      title,
-      description,
-      couponCode,
-      minOrderAmount: Number(minOrderAmount),
-      discount: Number(discount),
-      discountType,
-      offerType,
-      validFrom: dayjs(validFrom).toISOString(),
-      validUntil: dayjs(validUntil).toISOString(),
+      ...form,
+      minOrderAmount: Number(form.minOrderAmount),
+      discount: Number(form.discount),
+      validFrom: dayjs(`${form.validFrom}T00:00:00`).toISOString(),
+      validUntil: dayjs(`${form.validUntil}T23:59:59`).toISOString(),
     };
 
     try {
       setLoading(true);
       await api.post("/admin/offer/create", payload);
       toast.success("Offer created successfully");
+      setForm(initialForm);
       onClose();
       onSuccess?.();
-      // reset form
-      setTitle("");
-      setDescription("");
-      setCouponCode("");
-      setMinOrderAmount("");
-      setDiscount("");
-      setDiscountType(null);
-      setOfferType(null);
-      setValidFrom("");
-      setValidUntil("");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create offer");
+      toast.error(err.response?.data?.message || "Failed to create offer");
     } finally {
       setLoading(false);
     }
@@ -65,61 +95,103 @@ export default function CreateOfferModal({ open, onClose, onSuccess }: { open: b
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogTrigger asChild>
-        <Button>Create Offer</Button>
-      </DialogTrigger>
       <DialogContent className="space-y-4 max-w-2xl">
-        <DialogHeader>Create New Offer</DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Create New Offer</DialogTitle>
+        </DialogHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label>Title *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              value={form.title}
+              onChange={(e) => updateField("title", e.target.value)}
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+              required
+            />
           </div>
 
           <div>
-            <Label>Coupon Code *</Label>
-            <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+            <Label htmlFor="couponCode">Coupon Code *</Label>
+            <Input
+              id="couponCode"
+              value={form.couponCode.toUpperCase()}
+              onChange={(e) => updateField("couponCode", e.target.value)}
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+              required
+            />
           </div>
 
           <div className="sm:col-span-2">
-            <Label>Description</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="Optional"
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+            />
           </div>
 
           <div>
             <Label>Minimum Order Amount *</Label>
-            <Input type="number" value={minOrderAmount} onChange={(e) => setMinOrderAmount(e.target.value)} />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+              <Input
+                type="number"
+                value={form.minOrderAmount}
+                onChange={(e) => updateField("minOrderAmount", e.target.value)}
+                className="border border-orange-400 border-2 rounded-md focus:border-none pl-7"
+                required
+              />
+            </div>
           </div>
 
           <div>
             <Label>Discount *</Label>
-            <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+            <Input
+              type="number"
+              value={form.discount}
+              onChange={(e) => updateField("discount", e.target.value)}
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+              required
+            />
           </div>
 
           <div>
             <Label>Discount Type *</Label>
-            <Select value={discountType || ""} onValueChange={(val) => setDiscountType(val as keyof typeof DiscountType)}>
-              <SelectTrigger>
+            <Select
+              value={form.discountType}
+              onValueChange={(val) => updateField("discountType", val)}
+            >
+              <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
                 <SelectValue placeholder="Select Discount Type" />
               </SelectTrigger>
               <SelectContent>
                 {Object.values(DiscountType).map((dt) => (
-                  <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+                  <SelectItem key={dt} value={dt}>
+                    {dt}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Offer Type *</Label>
-            <Select value={offerType || ""} onValueChange={(val) => setOfferType(val as keyof typeof OfferType)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Offer Type" />
+            <Label>Purchase Type *</Label>
+            <Select
+              value={form.purchaseType}
+              onValueChange={(val) => updateField("purchaseType", val)}
+            >
+              <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
+                <SelectValue placeholder="Select Purchase Type" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(OfferType).map((ot) => (
-                  <SelectItem key={ot} value={ot}>{ot}</SelectItem>
+                {Object.values(PurchaseType).map((ot) => (
+                  <SelectItem key={ot} value={ot}>
+                    {ot}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -127,12 +199,24 @@ export default function CreateOfferModal({ open, onClose, onSuccess }: { open: b
 
           <div>
             <Label>Valid From *</Label>
-            <Input type="datetime-local" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+            <Input
+              type="date"
+              value={form.validFrom}
+              onChange={(e) => updateField("validFrom", e.target.value)}
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+              required
+            />
           </div>
 
           <div>
             <Label>Valid Until *</Label>
-            <Input type="datetime-local" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+            <Input
+              type="date"
+              value={form.validUntil}
+              onChange={(e) => updateField("validUntil", e.target.value)}
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
+              required
+            />
           </div>
         </div>
 

@@ -12,7 +12,7 @@ export interface ServiceAreaDto {
     name: string;
     city: string;
     state: string;
-    pincode: string;
+    pinCode: string;
     latitude: number;
     longitude: number;
     radiusKm: number;
@@ -95,7 +95,7 @@ export function DeliveryLocations() {
             ) : (
                 <div className="space-y-3">
                         {deliveryLocations.map((location) => (
-                            <Card key={location.id} className="bg-secondary/30">
+                            <Card key={location.id} className="bg-secondary/30 border-orange-400 border-2">
                                 <CardContent className="p-4 flex flex-col gap-3">
                                     {/* Top Row: Name + Actions */}
                                     <div className="flex items-center justify-between">
@@ -133,7 +133,7 @@ export function DeliveryLocations() {
                                         </div>
                                         <div>
                                             <span className="font-medium text-foreground">Pincode:</span>{" "}
-                                            {location.pincode}
+                                            {location.pinCode}
                                         </div>
                                         <div>
                                             <span className="font-medium text-foreground">Latitude:</span>{" "}
@@ -163,11 +163,18 @@ export function DeliveryLocations() {
                                 </CardContent>
                             </Card>
                         ))}
-                        <div className="flex justify-center gap-2 pt-4 mb-10">
-                            <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-                            <span className="self-center">Page {page + 1} of {totalPages}</span>
-                            <Button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
-                        </div>
+                        {deliveryLocations.length === 0 && (
+                            <p className="text-center py-4 text-muted-foreground">
+                                No delivery locations found.
+                            </p>
+                        )}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-4 mt-4">
+                                <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+                                <span className="self-center">Page {page + 1} of {totalPages}</span>
+                                <Button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                            </div>
+                        )}
                 </div>
             )}
 

@@ -42,7 +42,7 @@ export default function Login() {
       const res = await api.post("/auth/verify-otp", { mobile: fullmobile, otp });
 
       if (res.data.status === "OK") {
-        if (res.data.data.role === "USER") {
+        if (res.data.data.role !== "ADMIN") {
           toast.error("You are not allowed to login.");
           return;
         }
@@ -62,7 +62,7 @@ export default function Login() {
         (err.response?.status === 403
           ? "You are not allowed to login."
           : "Something went wrong");
-      alert(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

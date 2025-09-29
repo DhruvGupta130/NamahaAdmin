@@ -32,7 +32,6 @@ interface Product {
   variety: string;
   category: string;
   subscriptionPrice?: number;
-  durationInDays?: number;
   isSubscription?: boolean;
   oneTimePrice?: number;
   isOneTime?: boolean;
@@ -47,7 +46,6 @@ interface ProductForm {
   oneTimePrice: number;
   weightInGrams: number;
   subscriptionPrice: number;
-  durationInDays: number;
   images?: string[];
 }
 
@@ -75,7 +73,6 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
     oneTimePrice: 0,
     weightInGrams: 0,
     subscriptionPrice: 0,
-    durationInDays: 0,
     images: [],
   });
 
@@ -91,7 +88,6 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
         oneTimePrice: product.oneTimePrice || 0,
         weightInGrams: product.weightInGrams || 0,
         subscriptionPrice: product.subscriptionPrice || 0,
-        durationInDays: product.durationInDays || 0,
         images: product.images || [],
       });
       setIsOneTime(!!product.isOneTime);
@@ -105,7 +101,6 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
         oneTimePrice: 0,
         weightInGrams: 0,
         subscriptionPrice: 0,
-        durationInDays: 0,
         images: [],
       });
       setIsOneTime(true);
@@ -179,14 +174,13 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
       ...productData,
       oneTimePrice: isOneTime ? productData.oneTimePrice : null,
       subscriptionPrice: isSubscription ? productData.subscriptionPrice : null,
-      durationInDays: isSubscription ? productData.durationInDays : null,
     };
     if (isOneTime && (!payload.oneTimePrice || !payload.weightInGrams)) {
       toast.error("Please provide valid one-time price and weight");
       return;
     }
-    if (isSubscription && (!payload.subscriptionPrice || !payload.durationInDays)) {
-      toast.error("Please provide valid subscription price and duration");
+    if (isSubscription && (!payload.subscriptionPrice)) {
+      toast.error("Please provide valid subscription price");
       return;
     }
     if (!payload.title.trim()) {
@@ -267,6 +261,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                 onChange={(e) =>
                   setProductData((prev) => ({ ...prev, title: e.target.value }))
                 }
+                className="border border-orange-400 border-2 rounded-md focus:border-none"
               />
             </div>
 
@@ -278,6 +273,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                 onChange={(e) =>
                   setProductData((prev) => ({ ...prev, description: e.target.value }))
                 }
+                className="border border-orange-400 border-2 rounded-md focus:border-none"
                 rows={3}
               />
             </div>
@@ -291,7 +287,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     setProductData((prev) => ({ ...prev, category: value }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -311,7 +307,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     setProductData((prev) => ({ ...prev, variety: value }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
                     <SelectValue placeholder="Select Variety" />
                   </SelectTrigger>
                   <SelectContent>
@@ -330,7 +326,11 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>One-Time Price</Label>
-              <Switch checked={isOneTime} onCheckedChange={setIsOneTime} />
+              <Switch 
+                checked={isOneTime}
+                onCheckedChange={setIsOneTime}
+                className="data-[state=unchecked]:bg-gray-300"
+              />
             </div>
             {isOneTime && (
               <div className="grid grid-cols-2 gap-4">
@@ -343,7 +343,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                       onChange={(e) =>
                         setProductData((prev) => ({ ...prev, oneTimePrice: Number(e.target.value) }))
                       }
-                      className="pl-7" // add padding to prevent overlap with ₹
+                      className="border border-orange-400 border-2 rounded-md focus:border-none pl-7" // add padding to prevent overlap with ₹
                     />
                   </div>
                 </div>
@@ -354,6 +354,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     onChange={(e) =>
                       setProductData((prev) => ({ ...prev, weightInGrams: Number(e.target.value) }))
                     }
+                    className="border border-orange-400 border-2 rounded-md focus:border-none"
                   />
                 </div>
               </div>
@@ -367,10 +368,12 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
               <Switch
                 checked={isSubscription}
                 onCheckedChange={setIsSubscription}
+                className="data-[state=unchecked]:bg-gray-300"
               />
+
             </div>
             {isSubscription && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>* Price</Label>
                   <div className="relative">
@@ -380,18 +383,9 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                         onChange={(e) =>
                         setProductData((prev) => ({ ...prev, subscriptionPrice: Number(e.target.value) }))
                       }
-                      className="pl-7" // add padding to prevent overlap with ₹
+                      className="border border-orange-400 border-2 rounded-md focus:border-none pl-7" // add padding to prevent overlap with ₹
                     />
                   </div>
-                </div>
-                <div>
-                  <Label>Duration (Days)</Label>
-                  <Input
-                    value={productData.durationInDays || ""}
-                    onChange={(e) =>
-                      setProductData((prev) => ({ ...prev, durationInDays: Number(e.target.value) }))
-                    }
-                  />
                 </div>
                 <div>
                   <Label>Weight (gm)</Label>
@@ -400,6 +394,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     onChange={(e) =>
                       setProductData((prev) => ({ ...prev, weightInGrams: Number(e.target.value) }))
                     }
+                    className="border border-orange-400 border-2 rounded-md focus:border-none"
                   />
                 </div>
               </div>

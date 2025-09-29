@@ -58,6 +58,7 @@ export function AddVarietyModal({ open, onOpenChange, onVarietyAdded }: AddVarie
               value={varietyTitle}
               onChange={(e) => setVarietyTitle(e.target.value.trimStart())}
               placeholder="Enter variety title"
+              className="border border-orange-400 border-2 rounded-md focus:border-none"
               required
               disabled={loading}
             />
