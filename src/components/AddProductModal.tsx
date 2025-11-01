@@ -28,13 +28,16 @@ interface Product {
   title: string;
   images: string[];
   description: string;
-  weightInGrams: number;
   variety: string;
   category: string;
-  subscriptionPrice?: number;
-  isSubscription?: boolean;
-  oneTimePrice?: number;
   isOneTime?: boolean;
+  oneTimeUnits?: number;
+  oneTimeType?: string;
+  oneTimePrice: number;
+  isSubscription?: boolean;
+  subscriptionUnits?: number;
+  subscriptionType?: string;
+  subscriptionPrice: number;
 }
 
 interface ProductForm {
@@ -43,8 +46,11 @@ interface ProductForm {
   description: string;
   category: string;
   variety: string;
+  oneTimeUnits?: number;
+  oneTimeType?: string;
   oneTimePrice: number;
-  weightInGrams: number;
+  subscriptionUnits?: number;
+  subscriptionType?: string;
   subscriptionPrice: number;
   images?: string[];
 }
@@ -56,25 +62,50 @@ interface AddProductModalProps {
   onSave?: (form: ProductForm) => void;
 }
 
+const UNIT_TYPES = ["GMS", "KGS", "BUNCHES", "PIECES", "ML"];
+
 export function AddProductModal({ open, onOpenChange, product, onSave }: AddProductModalProps) {
   const [isOneTime, setIsOneTime] = useState<boolean>(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubscription, setIsSubscription] = useState<boolean>(true);
   const [varieties, setVarieties] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false); // fetching categories/varieties
   const [uploading, setUploading] = useState<boolean>(false); // image uploading
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null); // deleting image
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [productData, setProductData] = useState<ProductForm>({
     title: "",
     description: "",
     category: "",
     variety: "",
+    oneTimeUnits: 0,
+    oneTimeType: "GMS",
     oneTimePrice: 0,
-    weightInGrams: 0,
+    subscriptionUnits: 0,
+    subscriptionType: "GMS",
     subscriptionPrice: 0,
     images: [],
   });
+
+  // Load categories and varieties
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [catRes, varRes] = await Promise.all([
+          api.get("/public/product/category"),
+          api.get("/public/product/variety"),
+        ]);
+        setCategories(catRes.data.data || []);
+        setVarieties(varRes.data.data || []);
+      } catch {
+        toast.error("Failed to load categories or varieties");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Populate form if editing
   useEffect(() => {
@@ -85,8 +116,11 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
         description: product.description,
         category: product.category,
         variety: product.variety,
+        oneTimeUnits: product.oneTimeUnits || 0,
+        oneTimeType: product.oneTimeType || "GMS",
         oneTimePrice: product.oneTimePrice || 0,
-        weightInGrams: product.weightInGrams || 0,
+        subscriptionUnits: product.subscriptionUnits || 0,
+        subscriptionType: product.subscriptionType || "GMS",
         subscriptionPrice: product.subscriptionPrice || 0,
         images: product.images || [],
       });
@@ -98,8 +132,11 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
         description: "",
         category: "",
         variety: "",
+        oneTimeUnits: 0,
+        oneTimeType: "GMS",
         oneTimePrice: 0,
-        weightInGrams: 0,
+        subscriptionUnits: 0,
+        subscriptionType: "GMS",
         subscriptionPrice: 0,
         images: [],
       });
@@ -107,26 +144,6 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
       setIsSubscription(true);
     }
   }, [product, open]);
-
-  // Fetch categories and varieties
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [catRes, varRes] = await Promise.all([
-          api.get("/public/product/category"),
-          api.get("/public/product/variety"),
-        ]);
-        setCategories(catRes.data.data || []);
-        setVarieties(varRes.data.data || []);
-      } catch (err: any) {
-        toast.error("Failed to load categories or varieties");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   const handleDelete = async (img: string, index: number) => {
     setDeletingIndex(index);
@@ -170,17 +187,21 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
       toast.error("Please select at least one pricing option (One-Time or Subscription)");
       return;
     }
+    if (!productData.title.trim() || !productData.category || !productData.variety) {
+      toast.error("Please fill all required fields");
+      return;
+    }
     const payload: ProductForm = {
       ...productData,
       oneTimePrice: isOneTime ? productData.oneTimePrice : null,
       subscriptionPrice: isSubscription ? productData.subscriptionPrice : null,
     };
-    if (isOneTime && (!payload.oneTimePrice || !payload.weightInGrams)) {
-      toast.error("Please provide valid one-time price and weight");
+    if (isOneTime && (!payload.oneTimePrice || !payload.oneTimeUnits || payload.oneTimeUnits <= 0 || !payload.oneTimeType)) {
+      toast.error("Please provide valid one-time price and units");
       return;
     }
-    if (isSubscription && (!payload.subscriptionPrice)) {
-      toast.error("Please provide valid subscription price");
+    if (isSubscription && (!payload.subscriptionPrice || !payload.subscriptionUnits || payload.subscriptionUnits <= 0 || !payload.subscriptionType)) {
+      toast.error("Please provide valid subscription price and units");
       return;
     }
     if (!payload.title.trim()) {
@@ -261,7 +282,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                 onChange={(e) =>
                   setProductData((prev) => ({ ...prev, title: e.target.value }))
                 }
-                className="border border-orange-400 border-2 rounded-md focus:border-none"
+                className="border-orange-400 border-2 rounded-md focus:border-none"
               />
             </div>
 
@@ -273,7 +294,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                 onChange={(e) =>
                   setProductData((prev) => ({ ...prev, description: e.target.value }))
                 }
-                className="border border-orange-400 border-2 rounded-md focus:border-none"
+                className="border-orange-400 border-2 rounded-md focus:border-none"
                 rows={3}
               />
             </div>
@@ -287,7 +308,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     setProductData((prev) => ({ ...prev, category: value }))
                   }
                 >
-                  <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
+                  <SelectTrigger className="border-orange-400 border-2 rounded-md focus:border-none">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -307,7 +328,7 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                     setProductData((prev) => ({ ...prev, variety: value }))
                   }
                 >
-                  <SelectTrigger className="border border-orange-400 border-2 rounded-md focus:border-none">
+                  <SelectTrigger className="border-orange-400 border-2 rounded-md focus:border-none">
                     <SelectValue placeholder="Select Variety" />
                   </SelectTrigger>
                   <SelectContent>
@@ -333,9 +354,35 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
               />
             </div>
             {isOneTime && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>* Price</Label>
+                  <Label>Units</Label>
+                  <Input
+                    type="number"
+                    value={productData.oneTimeUnits || ""}
+                    onChange={(e) =>
+                      setProductData((p) => ({ ...p, oneTimeUnits: +e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Unit Type</Label>
+                  <Select
+                    value={productData.oneTimeType}
+                    onValueChange={(v) =>
+                      setProductData((p) => ({ ...p, oneTimeType: v }))
+                    }
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {UNIT_TYPES.map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Price (₹)</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
                     <Input
@@ -343,19 +390,9 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                       onChange={(e) =>
                         setProductData((prev) => ({ ...prev, oneTimePrice: Number(e.target.value) }))
                       }
-                      className="border border-orange-400 border-2 rounded-md focus:border-none pl-7" // add padding to prevent overlap with ₹
+                      className="border-orange-400 border-2 rounded-md focus:border-none pl-7" // add padding to prevent overlap with ₹
                     />
                   </div>
-                </div>
-                <div>
-                  <Label>Weight (gm)</Label>
-                  <Input
-                    value={productData.weightInGrams || ""}
-                    onChange={(e) =>
-                      setProductData((prev) => ({ ...prev, weightInGrams: Number(e.target.value) }))
-                    }
-                    className="border border-orange-400 border-2 rounded-md focus:border-none"
-                  />
                 </div>
               </div>
             )}
@@ -370,31 +407,43 @@ export function AddProductModal({ open, onOpenChange, product, onSave }: AddProd
                 onCheckedChange={setIsSubscription}
                 className="data-[state=unchecked]:bg-gray-300"
               />
-
             </div>
             {isSubscription && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>* Price</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-                    <Input
-                      value={productData.subscriptionPrice || ""}
-                        onChange={(e) =>
-                        setProductData((prev) => ({ ...prev, subscriptionPrice: Number(e.target.value) }))
-                      }
-                      className="border border-orange-400 border-2 rounded-md focus:border-none pl-7" // add padding to prevent overlap with ₹
-                    />
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Units</Label>
+                <Input
+                  type="number"
+                  value={productData.subscriptionUnits || ""}
+                  onChange={(e) =>
+                    setProductData((p) => ({ ...p, subscriptionUnits: +e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+              <Label>Unit Type</Label>
+                  <Select
+                    value={productData.subscriptionType}
+                    onValueChange={(v) =>
+                      setProductData((p) => ({ ...p, subscriptionType: v }))
+                    }
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {UNIT_TYPES.map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>Weight (gm)</Label>
+                  <Label>Price (₹)</Label>
                   <Input
-                    value={productData.weightInGrams || ""}
+                    type="number"
+                    value={productData.subscriptionPrice || ""}
                     onChange={(e) =>
-                      setProductData((prev) => ({ ...prev, weightInGrams: Number(e.target.value) }))
+                      setProductData((p) => ({ ...p, subscriptionPrice: +e.target.value }))
                     }
-                    className="border border-orange-400 border-2 rounded-md focus:border-none"
                   />
                 </div>
               </div>

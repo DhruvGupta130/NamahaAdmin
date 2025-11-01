@@ -9,6 +9,20 @@ import api from "@/lib/api";
 import { DeliveryLocations } from "./DeliveryLocations";
 import { toast } from "@/components/ui/sonner";
 
+function formatTime(timeString?: string) {
+  if (!timeString) return "-";
+  try {
+    const date = new Date(`1970-01-01T${timeString}`);
+    return date.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return timeString; // fallback in case backend already returns HH:mm AM/PM
+  }
+}
+
 export default function Delivery() {
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -178,9 +192,23 @@ export default function Delivery() {
 
                     {/* Address & Slot */}
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <div><span className="font-medium text-foreground">Address:</span> {formatAddress(delivery.address)}</div>
-                      {delivery.address?.directions && <div className="italic text-xs">Directions: {delivery.address.directions}</div>}
-                      <div><span className="font-medium text-foreground">Slot:</span> {delivery.scheduledAt?.name} ({delivery.scheduledAt?.startTime} - {delivery.scheduledAt?.endTime})</div>
+                      <div>
+                        <span className="font-medium text-foreground">Address:</span>{" "}
+                        {formatAddress(delivery.address)}
+                      </div>
+
+                      {delivery.address?.directions && (
+                        <div className="italic text-xs">
+                          Directions: {delivery.address.directions}
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="font-medium text-foreground">Slot:</span>{" "}
+                        {delivery.scheduledAt?.name[0]}{delivery.scheduledAt?.name.substring(1).toLowerCase()} (
+                        {formatTime(delivery.scheduledAt?.startTime)} -{" "}
+                        {formatTime(delivery.scheduledAt?.endTime)})
+                      </div>
                     </div>
 
                     {/* Actions */}

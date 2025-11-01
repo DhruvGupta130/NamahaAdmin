@@ -6,19 +6,23 @@ import { AddProductModal } from "@/components/AddProductModal";
 import api from "@/lib/api";
 import { toast } from "@/components/ui/sonner";
 import { AxiosResponse } from "axios";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Product {
   id: number;
   title: string;
   images: string[];
   description: string;
-  weightInGrams: number;
   variety: string;
   category: string;
-  subscriptionPrice?: number;
-  isSubscription?: boolean;
-  oneTimePrice?: number;
   isOneTime?: boolean;
+  oneTimeUnits?: number;
+  oneTimeType?: string;
+  oneTimePrice: number;
+  isSubscription?: boolean;
+  subscriptionUnits?: number;
+  subscriptionType?: string;
+  subscriptionPrice: number;
 }
 
 interface ProductForm {
@@ -36,18 +40,31 @@ interface ProductForm {
 export default function Products() {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize] = useState(10); // or whatever default
   const [totalPages, setTotalPages] = useState(0);
 
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/public/product/category");
+      setCategories(res.data?.data || []);
+    } catch {
+      toast.error("Failed to load categories");
+    }
+  };
+
   // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/admin/product/all", { params: { pageNumber: page, pageSize } });
-      console.log(res.data);
+      const params: any = { pageNumber: page, pageSize };
+      if (selectedCategory !== "ALL") params.category = selectedCategory;
+      const res = await api.get("/admin/product/all", { params });
       setTotalPages(res.data?.data?.page.totalPages || 0);
       setProducts(res.data.data.content || []);
     } catch (err: any) {
@@ -58,8 +75,12 @@ export default function Products() {
   };
 
   useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     fetchProducts();
-  }, [page]);
+  }, [page, selectedCategory]);
 
   // Delete product
   const deleteProduct = async (id: number) => {
@@ -115,6 +136,24 @@ export default function Products() {
         </Button>
       </div>
 
+      {/* Category Tabs */}
+      <Tabs
+        value={selectedCategory}
+        onValueChange={(v) => {
+          setPage(0);
+          setSelectedCategory(v);
+        }}
+      >
+        <TabsList className="flex flex-wrap justify-start gap-2 bg-secondary/30 p-2 rounded-xl">
+          <TabsTrigger value="ALL">All</TabsTrigger>
+          {categories.map((cat) => (
+            <TabsTrigger key={cat} value={cat}>
+              {cat}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       {/* Products Table */}
       {loading ? (
         <div className="text-center py-20 text-muted-foreground">Loading products...</div>
@@ -127,8 +166,8 @@ export default function Products() {
                   <tr>
                     <th className="text-left p-4 font-medium text-foreground">#</th>
                     <th className="text-left p-4 font-medium text-foreground">Product</th>
-                    <th className="text-left p-4 font-medium text-foreground">Subscription Price</th>
-                    <th className="text-left p-4 font-medium text-foreground">One-Time Price</th>
+                    <th className="text-left p-4 font-medium text-foreground">Subscription</th>
+                    <th className="text-left p-4 font-medium text-foreground">One-Time</th>
                     <th className="text-left p-4 font-medium text-foreground">Category</th>
                     <th className="text-left p-4 font-medium text-foreground">Variety</th>
                     <th className="text-left p-4 font-medium text-foreground">Type</th>
@@ -136,9 +175,9 @@ export default function Products() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {products.map((product, idx) => (
                     <tr key={product.id} className="border-t border-border">
-                      <td className="p-4">{product.id}</td>
+                      <td className="p-4">{idx + 1}</td>
                       <td className="p-4 flex items-center gap-3">
                         <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
                           {product.images?.[0] ? (
@@ -153,11 +192,24 @@ export default function Products() {
                         </div>
                         <div>
                           <div className="font-medium text-foreground">{product.title}</div>
-                          <div className="text-sm text-muted-foreground">{product.weightInGrams} gm</div>
                         </div>
                       </td>
-                      <td className="p-4">{product.isSubscription ? `₹${product.subscriptionPrice}` : "-"}</td>
-                       <td className="p-4">{product.isOneTime ? `₹${product.oneTimePrice}` : "-"}</td>
+                      <td className="p-4">
+                        <div className="font-medium text-foreground">
+                          {product.isSubscription ? `₹${product.subscriptionPrice}` : "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {product.isSubscription ? `${product.subscriptionUnits} ${product.subscriptionType}` : null}
+                        </div>
+                      </td>
+                       <td className="p-4">
+                        <div className="font-medium text-foreground">
+                          {product.isOneTime ? `₹${product.oneTimePrice}` : "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {product.isOneTime ? `${product.oneTimeUnits} ${product.oneTimeType}` : null}
+                        </div>
+                      </td>
                       <td className="p-4">{product.category}</td>
                       <td className="p-4">{product.variety}</td>
                       <td className="p-4">
